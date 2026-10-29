@@ -212,11 +212,20 @@ class SpokenApp {
       this.dom.btnPracticeAgain.onclick = () => {
         this.dom.analyticsCard.classList.remove('visible');
         this.dom.audioPlaybackBar.classList.remove('visible');
+        window.scrollTo({ top: this.dom.mainCard.offsetTop - 20, behavior: 'smooth' });
         this.resetTimer();
         this.toggleRecording();
         this.showToast('Re-speaking prompt — apply the suggested improvements!');
       };
     }
+
+    // Global Accessibility Shortcuts (Spacebar to toggle recording)
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        this.toggleRecording();
+      }
+    });
 
     // Read Aloud mode controls
     if (this.dom.btnNextPassage) {
