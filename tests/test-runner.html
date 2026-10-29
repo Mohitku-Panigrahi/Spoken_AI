@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spoken.ai Test Runner</title>
+  <style>
+    body { font-family: monospace; background: #0a0f1d; color: #f8fafc; padding: 2rem; }
+    h1 { color: #00f0ff; }
+    .test-pass { color: #10b981; margin: 0.4rem 0; }
+    .test-fail { color: #f43f5e; font-weight: bold; margin: 0.4rem 0; }
+    .summary { margin-top: 1.5rem; padding: 1rem; border: 1px solid #334155; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Spoken.ai — Automated Verification Suite</h1>
+  <div id="results">Running tests…</div>
+  <div class="summary" id="summary"></div>
+
+  <script type="module">
+    import { AnalysisEngine } from '../js/analysis.js';
+    import { StorageManager } from '../js/storage.js';
+
+    const results = document.getElementById('results');
+    const summary = document.getElementById('summary');
+    results.innerHTML = '';
+
+    let passed = 0;
+    let failed = 0;
+
+    function assert(condition, message) {
+      const p = document.createElement('div');
+      if (condition) {
+        p.className = 'test-pass';
+        p.textContent = `✔ PASS: ${message}`;
+        passed++;
+      } else {
+        p.className = 'test-fail';
+        p.textContent = `✖ FAIL: ${message}`;
+        failed++;
+      }
+      results.appendChild(p);
+    }
+
+    const engine = new AnalysisEngine();
+
+    // Test 1: Empty transcript
+    const resEmpty = engine.analyzeSession('', 60, null);
+    assert(resEmpty.wordCount === 0 && resEmpty.fluencyScore === 0, 'Handles empty transcript gracefully');
+
+    // Test 2: Filler word detection
+    const resFillers = engine.analyzeSession('Um I think that uh like basically this is right', 30, null);
+    assert(resFillers.fillerCount >= 3, `Correctly counts filler words (Found: ${resFillers.fillerCount})`);
+
+    // Test 3: Grammar Rule (it have -> it has)
+    const resGrammar = engine.analyzeSession('I made a tool and it have many features', 30, null);
+    assert(resGrammar.suggestedImprovement.includes('it has'), `Corrects subject-verb agreement 'it have' -> 'it has'`);
+
+    // Test 4: Vocabulary Enhancement (make a project -> developed a project)
+    const resVocab = engine.analyzeSession('I make a project for my team', 30, null);
+    assert(resVocab.suggestedImprovement.includes('developed a project'), `Suggests professional vocabulary 'make a project' -> 'developed a project'`);
+
+    // Test 5: Storage Streak
+    const initialStreak = StorageManager.getStreak();
+    StorageManager.saveSession({ date: new Date().toISOString(), prompt: 'Test', score: 85, wpm: 120, fillers: 0 });
+    assert(StorageManager.getStreak() >= 1, 'Increments or maintains daily streak on completed session');
+
+    summary.innerHTML = `<strong>Total: ${passed + failed} | Passed: ${passed} | Failed: ${failed}</strong>`;
+  </script>
+</body>
+</html>
