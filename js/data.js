@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    SPOKEN.AI — DATA BANK & LINGUISTIC RULES
+   Strict Grammar Rules · Optional Contextual Style Enhancements
 ═══════════════════════════════════════════════════════════════════ */
 
 export const promptsData = [
@@ -94,87 +95,110 @@ export const pronunciationTips = [
 
 export const fillerWordsList = [
   "um", "uh", "er", "ah", "like", "basically", "actually", "literally",
-  "you know", "i mean", "sort of", "kind of", "right", "okay so", "honestly"
+  "you know", "i mean", "sort of", "kind of"
 ];
 
-/* ── Grammatical Correction & Professional Lexicon Enhancement Engine ── */
+/* ── TIER 1: Demonstrable Grammatical Errors (Must Fix) ── */
 export const grammarRules = [
   {
-    regex: /\b(it|he|she)\s+(have)\b/gi,
+    id: "subj-verb-singular-has",
+    regex: /\b(it|he|she)\s+have\b/gi,
     replacement: "$1 has",
-    type: "grammar",
-    explanation: "Singular third-person subjects ('it', 'he', 'she') pair with 'has', not 'have'."
+    category: "Grammar Error",
+    explanation: "Singular third-person subjects ('it', 'he', 'she') take 'has', not 'have'."
   },
   {
-    regex: /\b(i|we|they|you)\s+(has)\b/gi,
+    id: "relative-clause-subject-verb",
+    regex: /\b(which|that)\s+help\s+(students|people|users)\b/gi,
+    replacement: "$1 helps $2",
+    category: "Grammar Error",
+    explanation: "When referring to a singular antecedent project or tool, the verb in the relative clause takes singular form ('helps')."
+  },
+  {
+    id: "plural-subj-have",
+    regex: /\b(we|they)\s+has\b/gi,
     replacement: "$1 have",
-    type: "grammar",
-    explanation: "First-person and plural pronouns ('I', 'we', 'they', 'you') take 'have'."
+    category: "Grammar Error",
+    explanation: "Plural subjects ('we', 'they') require 'have'."
   },
   {
-    regex: /\b(we|they|you)\s+(was)\b/gi,
+    id: "plural-past-were",
+    regex: /\b(we|they|you)\s+was\b/gi,
     replacement: "$1 were",
-    type: "grammar",
-    explanation: "Plural past-tense requires 'were' instead of 'was'."
+    category: "Grammar Error",
+    explanation: "Plural past-tense indicative requires 'were' instead of 'was'."
   },
   {
-    regex: /\b(i|he|she|it)\s+(were)\b/gi,
+    id: "singular-past-was",
+    regex: /\b(he|she|it)\s+were\b/gi,
     replacement: "$1 was",
-    type: "grammar",
-    explanation: "Singular past-tense indicative takes 'was'."
+    category: "Grammar Error",
+    explanation: "Singular third-person indicative takes 'was'."
   },
   {
+    id: "stative-agree",
     regex: /\bi\s+am\s+agree\b/gi,
     replacement: "I agree",
-    type: "grammar",
-    explanation: "'Agree' is a verb on its own. Say 'I agree', not 'I am agree'."
+    category: "Grammar Error",
+    explanation: "'Agree' is a full verb. Say 'I agree', not 'I am agree'."
   },
   {
+    id: "redundant-prep-discuss",
     regex: /\bdiscuss\s+about\b/gi,
     replacement: "discuss",
-    type: "grammar",
-    explanation: "'Discuss' is transitive and directly takes the object without 'about'."
+    category: "Grammar Error",
+    explanation: "'Discuss' directly governs its object; 'about' is redundant."
   },
   {
+    id: "redundant-prep-explain",
     regex: /\bexplain\s+about\b/gi,
     replacement: "explain",
-    type: "grammar",
-    explanation: "'Explain' directly takes an object. Use 'explain the concept' instead of 'explain about'."
+    category: "Grammar Error",
+    explanation: "'Explain' directly takes an object. Use 'explain the concept' rather than 'explain about'."
   },
   {
+    id: "singular-negation-doesnt",
     regex: /\b(he|she|it)\s+don't\b/gi,
     replacement: "$1 doesn't",
-    type: "grammar",
-    explanation: "Third-person singular takes 'doesn't' (does not) instead of 'don't'."
+    category: "Grammar Error",
+    explanation: "Third-person singular uses 'doesn't' (does not) instead of 'don't'."
   },
   {
+    id: "double-comparative-better",
     regex: /\bmore\s+better\b/gi,
     replacement: "much better",
-    type: "grammar",
-    explanation: "'Better' is already a comparative adjective. Say 'much better' or simply 'better'."
-  },
-  {
-    regex: /\baccording\s+to\s+me\b/gi,
-    replacement: "in my view",
-    type: "grammar",
-    explanation: "'According to' is used for external sources. For your own perspective, use 'in my opinion' or 'in my view'."
+    category: "Grammar Error",
+    explanation: "'Better' is already comparative. Use 'much better' or simply 'better'."
   }
 ];
 
-export const vocabularyEnhancements = [
-  { match: /\bmake\s+a\s+project\b/gi, better: "developed a project", reason: "More professional engineering phrasing than 'make'." },
-  { match: /\bvery\s+good\b/gi, better: "exceptional", reason: "Elevates conversational tone to articulate English." },
-  { match: /\bvery\s+big\b/gi, better: "substantial", reason: "More precise and impactful vocabulary." },
-  { match: /\bhelp\s+students\s+to\s+learn\b/gi, better: "empowers students to master", reason: "Stronger active verb formulation." },
-  { match: /\ba\s+lot\s+of\b/gi, better: "numerous", reason: "Formal, clean business vocabulary." },
-  { match: /\bgood\s+thing\b/gi, better: "key advantage", reason: "More persuasive and analytical." },
-  { match: /\bgot\s+better\b/gi, better: "improved significantly", reason: "Clearer qualitative progress indicator." },
-  { match: /\bbig\s+problem\b/gi, better: "critical challenge", reason: "Standard professional interview phrasing." },
-  { match: /\btalk\s+about\b/gi, better: "highlight", reason: "Stronger, more direct communicative verb." }
+/* ── TIER 2: Optional Professional Tone Enhancements (Meaning Preserved) ── */
+export const styleSuggestions = [
+  {
+    id: "collocation-project-action",
+    match: /\bmake\s+a\s+project\b/gi,
+    suggested: "build a project",
+    category: "Style Enhancement (Optional)",
+    note: "Valid informally, but 'build a project' or 'develop a project' is standard in technical contexts."
+  },
+  {
+    id: "opinion-intro",
+    match: /\baccording\s+to\s+me\b/gi,
+    suggested: "in my view",
+    category: "Style Enhancement (Optional)",
+    note: "'According to' usually cites outside authority. For your personal standpoint, 'in my opinion' or 'in my view' is more natural."
+  },
+  {
+    id: "vague-quantity-lot-of",
+    match: /\ba\s+lot\s+of\b/gi,
+    suggested: "several",
+    category: "Style Enhancement (Optional)",
+    note: "In formal presentations, 'several' or 'multiple' sounds more precise than 'a lot of'."
+  }
 ];
 
 export const advancedVocabularyTokens = new Set([
-  "substantial", "exceptional", "empower", "architect", "synthesize", "articulate",
+  "substantial", "exceptional", "architect", "synthesize", "articulate",
   "scalable", "comprehensive", "methodology", "leverage", "fundamental", "nuance",
   "perspective", "collaborate", "resilience", "optimize", "initiative", "endeavor",
   "framework", "strategic", "proficient", "deliberate", "subsequent", "consequently"

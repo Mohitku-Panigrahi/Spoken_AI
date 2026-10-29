@@ -185,8 +185,8 @@
         </div>
         <div class="metric-tile cefr">
           <div class="metric-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-          <div class="metric-value" id="metric-cefr">—</div>
-          <div class="metric-label">Estimated CEFR</div>
+          <div class="metric-value" id="metric-cefr" style="font-size:1rem; padding-top:0.3rem;">—</div>
+          <div class="metric-label">Vocab Variety (Exp)</div>
         </div>
       </div>
 
@@ -222,10 +222,16 @@
     <section class="history-card glass">
       <div class="history-header">
         <div class="section-label" style="margin-bottom:0;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Practice Sessions</div>
-        <button class="btn-action" id="btn-clear-history" style="padding:0.25rem 0.6rem; font-size:0.75rem;"><i class="fa-solid fa-trash-can"></i> Clear</button>
+        <button class="btn-action" id="btn-clear-history" style="padding:0.25rem 0.6rem; font-size:0.75rem;"><i class="fa-solid fa-trash-can"></i> Clear All History</button>
       </div>
       <div class="history-list" id="history-list"></div>
     </section>
+
+    <!-- Privacy & Audio Transparency Disclosure -->
+    <div class="privacy-note glass">
+      <strong><i class="fa-solid fa-shield-halved"></i> Audio Safety & Privacy Disclosure:</strong>
+      All voice recordings are captured locally in temporary browser memory using the standard <code>MediaRecorder</code> API (Opus/WebM format). Recordings are never sent to a private backend server and are discarded when you record again or close the page. The Web Speech API is handled by your browser platform (e.g. Google speech services in Chromium). Your practice history is stored strictly on your device via <code>localStorage</code> and can be permanently wiped using the "Clear All History" button above.
+    </div>
 
   </div>
 

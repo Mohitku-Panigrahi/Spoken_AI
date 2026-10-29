@@ -489,7 +489,7 @@ class SpokenApp {
     this.dom.metricWpm.textContent = analysis.wpm || '—';
     this.dom.metricFillers.textContent = analysis.fillerCount;
     this.dom.metricScore.textContent = `${analysis.fluencyScore}/100`;
-    this.dom.metricCefr.textContent = analysis.cefrLevel;
+    this.dom.metricCefr.textContent = analysis.vocabComplexityRating;
 
     // Render Intelligent Feedback
     this.dom.feedbackOriginal.textContent = analysis.originalAnswer || 'No words detected.';
@@ -499,8 +499,8 @@ class SpokenApp {
     analysis.explanations.forEach(exp => {
       const row = document.createElement('div');
       row.className = 'feedback-reason-item';
-      const badgeClass = exp.type === 'grammar' ? 'badge-grammar' : exp.type === 'vocab' ? 'badge-vocab' : 'badge-structure';
-      row.innerHTML = `<span class="feedback-badge ${badgeClass}">${exp.type}</span> <span>${exp.message}</span>`;
+      const badgeClass = exp.type === 'error' ? 'badge-error' : exp.type === 'style' ? 'badge-style' : 'badge-structure';
+      row.innerHTML = `<span class="feedback-badge ${badgeClass}">${exp.badge || exp.type}</span> <span>${exp.message}</span>`;
       this.dom.feedbackReasons.appendChild(row);
     });
 

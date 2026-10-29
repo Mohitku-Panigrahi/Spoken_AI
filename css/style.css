@@ -858,9 +858,30 @@ body.light-mode .category-select {
   flex-shrink: 0;
 }
 
-.badge-grammar { background: rgba(251, 191, 36, 0.18); color: var(--warn); }
-.badge-vocab { background: rgba(168, 85, 247, 0.18); color: var(--accent2); }
-.badge-structure { background: rgba(79, 142, 255, 0.18); color: var(--accent); }
+.badge-error { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+.badge-style { background: rgba(0, 240, 255, 0.15); color: var(--accent3); border: 1px solid rgba(0, 240, 255, 0.3); }
+.badge-structure { background: rgba(168, 85, 247, 0.18); color: var(--accent2); border: 1px solid rgba(168, 85, 247, 0.3); }
+
+/* Privacy & Audio Safety Note */
+.privacy-note {
+  margin-top: 2rem;
+  padding: 1rem 1.4rem;
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.privacy-note strong {
+  color: var(--text-secondary);
+}
+
+.privacy-note a {
+  color: var(--accent);
+  text-decoration: underline;
+}
 
 /* Practice Again Action Row */
 .retry-action-row {

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    SPOKEN.AI — SPEECH RECOGNITION MANAGER
-   Resilient Web Speech API with Auto-Reconnect on Silence
+   Resilient Web Speech API with Clean Pause Recovery & Duplicate Guard
 ═══════════════════════════════════════════════════════════════════ */
 
 export class SpeechManager {
@@ -8,12 +8,13 @@ export class SpeechManager {
     this.recognition = null;
     this.isRecording = false;
     this.isPaused = false;
-    this.finalTranscript = '';
+    this.finalSegments = [];
     this.interimTranscript = '';
     this.onTranscriptUpdate = null;
     this.onError = null;
     this.onStatusChange = null;
     this.autoRestart = true;
+    this.restartAttempts = 0;
     
     this.initRecognition();
   }
@@ -32,28 +33,41 @@ export class SpeechManager {
     this.recognition.lang = 'en-US';
 
     this.recognition.onstart = () => {
+      this.restartAttempts = 0;
       if (this.onStatusChange) this.onStatusChange('listening');
     };
 
     this.recognition.onresult = (event) => {
       this.interimTranscript = '';
+      
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcriptPart = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          this.finalTranscript += (this.finalTranscript ? ' ' : '') + transcriptPart.trim();
+        const item = event.results[i];
+        const text = item[0].transcript.trim();
+        if (!text) continue;
+
+        if (item.isFinal) {
+          // Guard against duplicate consecutive final phrases across auto-reconnects
+          const lastSegment = this.finalSegments[this.finalSegments.length - 1];
+          if (!lastSegment || lastSegment.toLowerCase() !== text.toLowerCase()) {
+            this.finalSegments.push(text);
+          }
         } else {
-          this.interimTranscript += transcriptPart;
+          this.interimTranscript += (this.interimTranscript ? ' ' : '') + text;
         }
       }
 
       if (this.onTranscriptUpdate) {
-        this.onTranscriptUpdate(this.finalTranscript, this.interimTranscript);
+        this.onTranscriptUpdate(this.getFullTranscript(), this.interimTranscript);
       }
     };
 
     this.recognition.onerror = (event) => {
       if (event.error === 'no-speech') {
-        // Normal silence timeout; if still recording, auto-recovery will handle it onend
+        // Natural silence between sentences; handled cleanly by onend
+        return;
+      }
+      if (event.error === 'aborted') {
+        // Intentional abort or stop
         return;
       }
       if (this.onError) {
@@ -62,12 +76,18 @@ export class SpeechManager {
     };
 
     this.recognition.onend = () => {
-      // Auto-reconnect if user is still actively recording and hasn't paused/finished
+      // Auto-reconnect if user is still actively recording and not paused
       if (this.isRecording && !this.isPaused && this.autoRestart) {
-        try {
-          this.recognition.start();
-        } catch {
-          // Ignore if already active
+        this.restartAttempts++;
+        if (this.restartAttempts < 15) {
+          try {
+            this.recognition.start();
+          } catch {
+            // Already restarted
+          }
+        } else {
+          if (this.onError) this.onError('Speech connection timed out after prolonged silence.');
+          this.stop();
         }
       } else if (!this.isRecording) {
         if (this.onStatusChange) this.onStatusChange('idle');
@@ -75,21 +95,30 @@ export class SpeechManager {
     };
   }
 
+  getFullTranscript() {
+    return this.finalSegments.join(' ').trim();
+  }
+
   start() {
-    if (!this.recognition) return;
+    if (!this.recognition || this.isRecording) return;
     this.isRecording = true;
     this.isPaused = false;
-    this.finalTranscript = '';
+    this.autoRestart = true;
+    this.finalSegments = [];
     this.interimTranscript = '';
+    this.restartAttempts = 0;
+
     try {
       this.recognition.start();
     } catch {
-      // If already started, ignore error
+      // Ignore if already active
     }
   }
 
   pause() {
+    if (!this.isRecording || this.isPaused) return;
     this.isPaused = true;
+    this.autoRestart = false;
     if (this.recognition) {
       try { this.recognition.stop(); } catch {}
     }
@@ -97,7 +126,9 @@ export class SpeechManager {
   }
 
   resume() {
+    if (!this.isRecording || !this.isPaused) return;
     this.isPaused = false;
+    this.autoRestart = true;
     if (this.recognition) {
       try { this.recognition.start(); } catch {}
     }
@@ -105,17 +136,31 @@ export class SpeechManager {
   }
 
   stop() {
+    if (!this.isRecording) return this.getFullTranscript();
     this.isRecording = false;
     this.isPaused = false;
+    this.autoRestart = false;
+
+    // Critical fix: commit any in-flight interim words so the user's final words are not discarded
+    if (this.interimTranscript && this.interimTranscript.trim()) {
+      const pending = this.interimTranscript.trim();
+      const last = this.finalSegments[this.finalSegments.length - 1];
+      if (!last || !last.toLowerCase().endsWith(pending.toLowerCase())) {
+        this.finalSegments.push(pending);
+      }
+      this.interimTranscript = '';
+    }
+
     if (this.recognition) {
       try { this.recognition.stop(); } catch {}
     }
+
     if (this.onStatusChange) this.onStatusChange('idle');
-    return this.finalTranscript;
+    return this.getFullTranscript();
   }
 
   reset() {
-    this.finalTranscript = '';
+    this.finalSegments = [];
     this.interimTranscript = '';
   }
 }

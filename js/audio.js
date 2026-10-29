@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    SPOKEN.AI — AUDIO ENGINE
-   MediaRecorder Voice Playback · AudioContext Canvas Waveform
+   MediaRecorder Voice Playback · AudioContext Waveform · Resource Safety
 ═══════════════════════════════════════════════════════════════════ */
 
 export class AudioEngine {
@@ -16,10 +16,11 @@ export class AudioEngine {
     this.canvas = null;
     this.canvasCtx = null;
     this.audioElement = new Audio();
-    this.isPlayingBack = false;
+    this.recordingMimeType = 'audio/webm';
   }
 
   async initMicStream() {
+    // Only request microphone stream when user clicks record
     if (this.mediaStream && this.mediaStream.active) {
       return this.mediaStream;
     }
@@ -32,16 +33,21 @@ export class AudioEngine {
     if (!this.canvas) return;
     this.canvasCtx = this.canvas.getContext('2d');
     
-    // Resize internal resolution for sharp rendering
     const rect = this.canvas.getBoundingClientRect();
     this.canvas.width = (rect.width || 480) * window.devicePixelRatio;
     this.canvas.height = (rect.height || 34) * window.devicePixelRatio;
   }
 
   async startRecording() {
+    // Clean up previous recorded audio blob URL to prevent memory leaks
+    if (this.recordedAudioUrl) {
+      URL.revokeObjectURL(this.recordedAudioUrl);
+      this.recordedAudioUrl = null;
+    }
+
     const stream = await this.initMicStream();
     
-    // 1. Setup AudioContext Analyser
+    // AudioContext setup
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!this.audioContext || this.audioContext.state === 'closed') {
       this.audioContext = new AudioCtx();
@@ -55,20 +61,20 @@ export class AudioEngine {
     this.microphone = this.audioContext.createMediaStreamSource(stream);
     this.microphone.connect(this.analyser);
 
-    // 2. Setup MediaRecorder for User Playback
+    // MediaRecorder setup
     this.audioChunks = [];
     const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
-    let selectedMime = '';
+    this.recordingMimeType = '';
     for (const m of mimeTypes) {
-      if (MediaRecorder.isTypeSupported(m)) {
-        selectedMime = m;
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) {
+        this.recordingMimeType = m;
         break;
       }
     }
 
     try {
-      this.mediaRecorder = selectedMime 
-        ? new MediaRecorder(stream, { mimeType: selectedMime })
+      this.mediaRecorder = this.recordingMimeType 
+        ? new MediaRecorder(stream, { mimeType: this.recordingMimeType })
         : new MediaRecorder(stream);
     } catch {
       this.mediaRecorder = new MediaRecorder(stream);
@@ -80,7 +86,7 @@ export class AudioEngine {
       }
     };
 
-    this.mediaRecorder.start(250); // Record in 250ms chunks
+    this.mediaRecorder.start(200); // 200ms slice
     this.drawWaveform();
   }
 
@@ -109,7 +115,6 @@ export class AudioEngine {
         const percent = val / 255;
         const barHeight = Math.max(3, percent * height);
 
-        // Electric Cyan to Neon Purple Gradient
         const gradient = ctx.createLinearGradient(0, height, 0, 0);
         gradient.addColorStop(0, '#00f0ff');
         gradient.addColorStop(1, '#a855f7');
@@ -134,31 +139,43 @@ export class AudioEngine {
 
     return new Promise((resolve) => {
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+        this.releaseMic();
         resolve(null);
         return;
       }
 
       this.mediaRecorder.onstop = () => {
+        this.releaseMic();
         if (this.audioChunks.length > 0) {
-          const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
-          const blob = new Blob(this.audioChunks, { type: mimeType });
-          if (this.recordedAudioUrl) {
-            URL.revokeObjectURL(this.recordedAudioUrl);
-          }
+          const mime = this.mediaRecorder.mimeType || this.recordingMimeType || 'audio/webm';
+          const blob = new Blob(this.audioChunks, { type: mime });
           this.recordedAudioUrl = URL.createObjectURL(blob);
           this.audioElement.src = this.recordedAudioUrl;
-          resolve({ blob, url: this.recordedAudioUrl });
+          resolve({ blob, url: this.recordedAudioUrl, mime });
         } else {
           resolve(null);
         }
       };
 
-      this.mediaRecorder.stop();
+      try {
+        this.mediaRecorder.stop();
+      } catch {
+        this.releaseMic();
+        resolve(null);
+      }
     });
   }
 
+  releaseMic() {
+    // Release active microphone tracks immediately when session terminates
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+  }
+
   setupAudioPlayerUI(elements) {
-    const { container, playBtn, scrubber, timeDisplay, downloadBtn } = elements;
+    const { container, playBtn, scrubber, timeDisplay, downloadBtn, formatBadge } = elements;
     if (!container || !playBtn || !scrubber || !timeDisplay) return;
 
     playBtn.onclick = () => {
@@ -198,16 +215,17 @@ export class AudioEngine {
         if (!this.recordedAudioUrl) return;
         const a = document.createElement('a');
         a.href = this.recordedAudioUrl;
-        a.download = `spoken-ai-session-${Date.now()}.webm`;
+        a.download = `spoken-ai-practice-${Date.now()}.webm`;
         a.click();
       };
     }
   }
 
   cleanup() {
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(t => t.stop());
-      this.mediaStream = null;
+    this.releaseMic();
+    if (this.recordedAudioUrl) {
+      URL.revokeObjectURL(this.recordedAudioUrl);
+      this.recordedAudioUrl = null;
     }
     if (this.audioContext && this.audioContext.state !== 'closed') {
       this.audioContext.close();
