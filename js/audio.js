@@ -110,6 +110,14 @@ export class AudioEngine {
       const step = Math.floor(bufferLength / barCount);
       const barWidth = (width / barCount) - 2;
 
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+      const avg = sum / bufferLength;
+      const isSpeaking = avg > 12;
+
+      ctx.shadowBlur = isSpeaking ? 10 : 0;
+      ctx.shadowColor = isSpeaking ? '#00f0ff' : 'transparent';
+
       for (let i = 0; i < barCount; i++) {
         const val = dataArray[i * step] || 0;
         const percent = val / 255;
@@ -117,7 +125,7 @@ export class AudioEngine {
 
         const gradient = ctx.createLinearGradient(0, height, 0, 0);
         gradient.addColorStop(0, '#00f0ff');
-        gradient.addColorStop(1, '#a855f7');
+        gradient.addColorStop(1, isSpeaking ? '#ec4899' : '#a855f7');
 
         ctx.fillStyle = gradient;
         ctx.fillRect(i * (barWidth + 2), (height - barHeight) / 2, barWidth, barHeight);

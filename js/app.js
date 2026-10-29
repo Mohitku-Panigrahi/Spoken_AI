@@ -25,6 +25,7 @@ class SpokenApp {
     this.shadowIndex = 0;
     this.tipIndex = 0;
     this.webcamStream = null;
+    this.wakeLock = null;
 
     this.cacheDOMElements();
     this.init();
@@ -136,6 +137,44 @@ class SpokenApp {
     this.rotateTip();
     this.updateStreakDisplay();
     this.renderHistory();
+
+    // Screen wake lock visibility listener
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && this.isSessionActive && !this.speechManager.isPaused) {
+        this.requestWakeLock();
+      }
+    });
+
+    // Mobile iOS speech notice
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS && !this.speechManager.isSupported()) {
+      setTimeout(() => {
+        this.showToast('🎙️ Running on iOS: Voice recording & audio playback work directly!');
+      }, 1200);
+    }
+  }
+
+  triggerHaptic(ms = 40) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(ms); } catch {}
+    }
+  }
+
+  async requestWakeLock() {
+    if ('wakeLock' in navigator) {
+      try {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+      } catch (err) {
+        console.warn('WakeLock request skipped:', err);
+      }
+    }
+  }
+
+  releaseWakeLock() {
+    if (this.wakeLock) {
+      try { this.wakeLock.release(); } catch {}
+      this.wakeLock = null;
+    }
   }
 
   bindEvents() {
@@ -348,6 +387,8 @@ class SpokenApp {
 
     if (!this.isSessionActive) {
       // Start Session
+      this.triggerHaptic(50);
+      await this.requestWakeLock();
       this.isSessionActive = true;
       this.timeRemaining = this.selectedDuration;
       this.updateTimerDisplay();
@@ -375,8 +416,10 @@ class SpokenApp {
 
   pauseSession() {
     if (!this.isSessionActive) return;
+    this.triggerHaptic(35);
     if (this.speechManager.isPaused) {
       this.speechManager.resume();
+      this.requestWakeLock();
       this.startTimer();
       this.dom.btnMic.classList.remove('paused');
       this.dom.btnMic.classList.add('recording');
@@ -385,6 +428,7 @@ class SpokenApp {
       this.dom.micStatus.className = 'mic-status active';
     } else {
       this.speechManager.pause();
+      this.releaseWakeLock();
       clearInterval(this.timerInterval);
       this.dom.btnMic.classList.remove('recording');
       this.dom.btnMic.classList.add('paused');
@@ -469,6 +513,8 @@ class SpokenApp {
 
   async finishSession() {
     if (!this.isSessionActive) return;
+    this.triggerHaptic(50);
+    this.releaseWakeLock();
     this.isSessionActive = false;
     clearInterval(this.timerInterval);
 

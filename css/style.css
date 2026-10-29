@@ -39,7 +39,7 @@ html {
 }
 
 body {
-  background: var(--bg-deep) url('../thick-forest-misty-5120x3413-26360.jpg') center center / cover no-repeat fixed;
+  background: var(--bg-deep) url('../thick-forest-misty-optimized.jpg') center center / cover no-repeat fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-weight: 400;
@@ -650,9 +650,10 @@ body.light-mode .category-select {
 
 .playback-scrubber {
   flex-grow: 1;
-  height: 5px;
+  height: 6px;
   accent-color: var(--accent3);
   cursor: pointer;
+  touch-action: pan-y;
 }
 
 .playback-time {
@@ -1066,21 +1067,25 @@ body.light-mode .category-select {
 /* ── Responsive Rules ───────────────────────────────────────── */
 @media (max-width: 640px) {
   .app-wrapper {
-    padding: 1rem 0.6rem 3rem;
+    padding: 0.8rem 0.5rem 3.5rem;
   }
   
   .controls-row {
-    gap: 1.5rem;
+    gap: 1.2rem;
   }
   
   .timer-wrap {
-    width: 90px;
-    height: 90px;
+    width: 86px;
+    height: 86px;
   }
   
   .timer-svg {
-    width: 90px;
-    height: 90px;
+    width: 86px;
+    height: 86px;
+  }
+  
+  .timer-time {
+    font-size: 1.2rem;
   }
   
   .btn-mic {
@@ -1089,7 +1094,64 @@ body.light-mode .category-select {
     font-size: 1.6rem;
   }
   
+  .side-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .btn-pause {
+    right: -40px;
+  }
+  
+  .btn-finish {
+    left: -40px;
+  }
+  
   .prompt-text {
     font-size: 1.1rem;
+    min-height: 2.8rem;
+  }
+  
+  .main-card {
+    padding: 1.2rem 1.1rem;
+  }
+  
+  .mirror-video {
+    width: 120px;
+    height: 90px;
+  }
+  
+  .analytics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 380px) {
+  .controls-row {
+    gap: 0.8rem;
+  }
+  
+  .timer-wrap {
+    width: 76px;
+    height: 76px;
+  }
+  
+  .timer-svg {
+    width: 76px;
+    height: 76px;
+  }
+  
+  .btn-mic {
+    width: 64px;
+    height: 64px;
+    font-size: 1.4rem;
+  }
+  
+  .btn-pause {
+    right: -34px;
+  }
+  
+  .btn-finish {
+    left: -34px;
   }
 }
